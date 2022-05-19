@@ -35,19 +35,27 @@ const urlShortner = async function (req, res) {
 
         if (!validator.isURL(req.body.longUrl)) return res.status(400).send({ status: false, msg: "Invalid URL" })
 
-        let repeat = await urlModel.findOne({ longUrl: req.body.longUrl })
-        if (repeat) return res.status(400).send({ status: false, msg: "URL already present in Database" })
+        let cachedShort = await GET_ASYNC(req.body.longUrl)
+        if(cachedShort){
+            cachedShort = JSON.parse(cachedShort)
+            let longUrl = req.body.longUrl
+            let shortUrl = cachedShort
+            let urlCode = shortUrl.slice(shortUrl.lastIndexOf('/')+1)
+            return res.status(200).send({status :true , data : { urlCode, longUrl, shortUrl }})
+        }else{
 
-        const shortIdgen = nanoid()
-        req.body.urlCode = shortIdgen
-        req.body.shortUrl = BASE_URL + shortIdgen
+            const shortIdgen = nanoid()
+            req.body.urlCode = shortIdgen
+            req.body.shortUrl = BASE_URL + shortIdgen
 
-        const dbEntry = req.body
+            const dbEntry = req.body
 
-        let result = await urlModel.create(dbEntry)
+            let result = await urlModel.create(dbEntry)
 
-        let { urlCode, longUrl, shortUrl } = result
-        res.status(201).send({ status: true, data: { urlCode, longUrl, shortUrl } })
+            let { urlCode, longUrl, shortUrl } = result
+            await SET_ASYNC(longUrl, JSON.stringify(shortUrl))
+            res.status(201).send({ status: true, data: { urlCode, longUrl, shortUrl } })
+        }
 
     } catch (error) {
         res.status(500).send({ status: false, msg: error.message })
