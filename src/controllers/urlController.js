@@ -36,13 +36,13 @@ const urlShortner = async function (req, res) {
         if (!validator.isURL(req.body.longUrl)) return res.status(400).send({ status: false, msg: "Invalid URL" })
 
         let cachedShort = await GET_ASYNC(req.body.longUrl)
-        if(cachedShort){
+        if (cachedShort) {
             cachedShort = JSON.parse(cachedShort)
             let longUrl = req.body.longUrl
             let shortUrl = cachedShort
-            let urlCode = shortUrl.slice(shortUrl.lastIndexOf('/')+1)
-            return res.status(200).send({status :true , data : { urlCode, longUrl, shortUrl }})
-        }else{
+            let urlCode = shortUrl.slice(shortUrl.lastIndexOf('/') + 1)
+            return res.status(200).send({ status: true, data: { urlCode, longUrl, shortUrl } })
+        } else {
 
             const shortIdgen = nanoid()
             req.body.urlCode = shortIdgen
@@ -67,18 +67,16 @@ const getUrlCode = async function (req, res) {
         let urlCode = req.params.urlCode
         if (!isValid(urlCode)) return res.status(400).send({ status: false, msg: "Bad or Missing UrlCode" })
 
-        let result = await urlModel.findOne({ urlCode: urlCode }).select({ _id: 0, longUrl: 1 })
-        if (!result) return res.status(404).send({ status: false, message: "No URL present with that urlCode" })
-
-        
         let urlData = await GET_ASYNC(`${req.params.urlCode}`)
-        if(urlData){
+        if (urlData) {
             return res.redirect(302, JSON.parse(urlData))
-        }else{
+        } else {
+            let result = await urlModel.findOne({ urlCode: urlCode }).select({ _id: 0, longUrl: 1 })
+            if (!result) return res.status(404).send({ status: false, message: "No URL present with that urlCode" })
             await SET_ASYNC(`${urlCode}`, JSON.stringify(result.longUrl))
             res.redirect(302, result.longUrl)
         }
-
+        
     } catch (error) {
         res.status(500).send({ status: false, msg: error.message })
     }
