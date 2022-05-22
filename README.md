@@ -1,5 +1,5 @@
 # project-URLshortner
-# Uranium
+# Uranium-Nitesh Kumar Mahala
 
 ## Scalable URL Shortner Project Requirement
 
